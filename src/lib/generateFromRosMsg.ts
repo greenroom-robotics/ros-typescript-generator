@@ -7,7 +7,7 @@ import { camelCase, compact, partition, upperFirst } from 'lodash';
 
 import { IConfig } from '../types/config';
 
-import { primitives1, primitives2 } from './primitives';
+import { primitiveArrayTypes, primitives1, primitives2 } from './primitives';
 
 const SUPPORTED_ROS_VERSIONS = [1, 2];
 
@@ -99,6 +99,18 @@ export const generateFromRosMsg = (
 
   const fullMessageDefinitions = [...messageDefinitions, ...serviceDefinitions];
 
+  const getParamType = (param: MessageDefinitionField): string => {
+    if (param.type in primitives) {
+      return primitives[param.type as keyof typeof primitives];
+    } else if (param.type in primitiveArrayTypes && param.isArray) {
+      return primitiveArrayTypes[
+        param.type as keyof typeof primitiveArrayTypes
+      ];
+    } else {
+      return rosNameToTypeName(param.type, typePrefix);
+    }
+  };
+
   return fullMessageDefinitions
     .map((definition) => {
       if (!definition) return '\n';
@@ -115,10 +127,7 @@ export const generateFromRosMsg = (
       const tsTypes = defTypes
         .filter((defType) => isOfNoneEmptyType(defType))
         .map((param) => {
-          const paramType: string =
-            param.type in primitives
-              ? primitives[param.type as keyof typeof primitives]
-              : rosNameToTypeName(param.type, typePrefix);
+          const paramType: string = getParamType(param);
 
           const arrayMarker = param.isArray ? '[]' : '';
           return `  ${param.name}: ${paramType}${arrayMarker};`;
