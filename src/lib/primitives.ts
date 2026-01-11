@@ -38,3 +38,16 @@ export const primitives2 = {
   duration: '{ sec: number, nanosec: number }',
   time: '{ sec: number, nanosec: number }',
 };
+
+export const primitiveArrayTypes = {
+  float32: 'Float32Array',
+  uint8: 'Uint8Array',
+  uint16: 'Uint16Array',
+  int8: 'Int8Array',
+  int16: 'Int16Array',
+  int32: 'Int32Array',
+  uint32: 'Uint32Array',
+  float64: 'Float64Array',
+  bigint64: 'BigInt64Array',
+  biguint64: 'BigUint64Array',
+};

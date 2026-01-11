@@ -7,7 +7,7 @@ import { camelCase, compact, partition, snakeCase, upperFirst } from 'lodash';
 
 import { IConfig } from '../types/config';
 
-import { primitives1, primitives2 } from './primitives';
+import { primitiveArrayTypes, primitives1, primitives2 } from './primitives';
 
 const SUPPORTED_ROS_VERSIONS = [1, 2];
 
@@ -127,6 +127,27 @@ export const generateFromRosMsg = (
 
   const fullMessageDefinitions = [...messageDefinitions, ...serviceDefinitions];
 
+  const getParamType = (param: MessageDefinitionField, pkgName: string) => {
+    if (param.type in primitiveArrayTypes && param.isArray) {
+      return primitiveArrayTypes[
+        param.type as keyof typeof primitiveArrayTypes
+      ];
+    } else if (param.type in primitives) {
+      return primitives[param.type as keyof typeof primitives];
+    } else if (useNamespaces) {
+      if (param.type.split('/')[0] === pkgName) {
+        return pascalCase(param.type.split('/')[1]);
+      } else {
+        return param.type.split('/').map(pascalCase).join('.');
+      }
+    } else {
+      return rosNameToTypeName(
+        param.type,
+        (param as any)['typeAdjusted'] === true ? '' : typePrefix
+      );
+    }
+  };
+
   const interfacesByPackage = fullMessageDefinitions
     .map((definition) => {
       if (!definition) return '\n';
@@ -235,18 +256,10 @@ ${enumEntriesFromFields(candidates_without_prefix)}
       const tsTypes = defTypes
         .filter((defType) => isOfNoneEmptyType(defType))
         .map((param) => {
-          const paramType: string =
-            param.type in primitives
-              ? primitives[param.type as keyof typeof primitives]
-              : useNamespaces
-              ? param.type.split('/')[0] === pkgName
-                ? pascalCase(param.type.split('/')[1])
-                : param.type.split('/').map(pascalCase).join('.')
-              : rosNameToTypeName(
-                  param.type,
-                  (param as any)['typeAdjusted'] === true ? '' : typePrefix
-                );
-          const arrayMarker = param.isArray ? '[]' : '';
+          const paramType: string = getParamType(param, pkgName);
+          const arrayMarker =
+            param.isArray && !paramType.includes('Array') ? '[]' : '';
+
           return `  ${param.name}: ${paramType.replace(
             '.',
             `.${typePrefix}`
