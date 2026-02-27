@@ -2,6 +2,10 @@ import { Dirent } from 'fs';
 import { readdir, readFile, realpath, stat, writeFile } from 'fs/promises';
 import { basename, join } from 'path';
 
+export const splitOnSeparator = (content: string): string[] => {
+  return content.split(/^\s*---\s*$/m);
+};
+
 export const generateMsgsFromSrvFiles = async (
   inputFilePath: string,
   tmpDir: string
@@ -14,7 +18,7 @@ export const generateMsgsFromSrvFiles = async (
     const fileContent = await readFile(inputFilePath, 'utf-8');
 
     // Split the content into two parts based on the '---' line
-    const [request, response] = fileContent.split('---', 2);
+    const [request, response] = splitOnSeparator(fileContent);
 
     // Check if a part is empty or consists only of lines starting with #
     const isRequestValid =
@@ -64,7 +68,7 @@ export const generateMsgsFromActionsFiles = async (
     const fileContent = await readFile(inputFilePath, 'utf-8');
 
     // Split the content into two parts based on the '---' line
-    const [goal, result, feedback] = fileContent.split('---', 3);
+    const [goal, result, feedback] = splitOnSeparator(fileContent);
 
     // Check if a part is empty or consists only of lines starting with #
     const isGoalEmptyOrCommentOnly =
