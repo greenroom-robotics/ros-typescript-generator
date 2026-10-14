@@ -16,34 +16,16 @@ export const generateMsgsFromSrvFiles = async (
     // Split the content into two parts based on the '---' line
     const [request, response] = fileContent.split('---', 2);
 
-    // Check if a part is empty or consists only of lines starting with #
-    const isRequestValid =
-      !request ||
-      !request.trim() ||
-      request
-        .trim()
-        .split('\n')
-        .every((line) => line.trim().startsWith('#'));
-    const isResponseValid =
-      !response ||
-      !response.trim() ||
-      response
-        .trim()
-        .split('\n')
-        .every((line) => line.trim().startsWith('#'));
+    // Always write both parts, even when one is empty (e.g. std_srvs/Trigger),
+    // so the service type is still generated. This matches the empty
+    // _Request.msg/_Response.msg files ROS 2 installs for these services.
+    const requestMsgFile = join(tmpDir, srvName + '_Request.msg');
+    await writeFile(requestMsgFile, request ?? '', 'utf-8');
+    output.push(requestMsgFile);
 
-    // Write the two parts into separate output files
-    if (!isRequestValid) {
-      const requestMsgFile = join(tmpDir, srvName + '_Request.msg');
-      await writeFile(requestMsgFile, request, 'utf-8');
-      output.push(requestMsgFile);
-    }
-
-    if (!isResponseValid) {
-      const responseMsgFile = join(tmpDir, srvName + '_Response.msg');
-      await writeFile(responseMsgFile, response, 'utf-8');
-      output.push(responseMsgFile);
-    }
+    const responseMsgFile = join(tmpDir, srvName + '_Response.msg');
+    await writeFile(responseMsgFile, response ?? '', 'utf-8');
+    output.push(responseMsgFile);
 
     return output;
   } catch (error) {
